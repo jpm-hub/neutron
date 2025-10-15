@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Alert Message</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+      overflow: hidden; /* Prevent scrollbars */
+    }
+    .alert-title {
+      font-size: 1em;
+      color: #f44336;
+      margin-top: 40px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .alert-message {
+      font-size: 0.85em;
+      color: #333;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .alert-btn {
+      background: #f44336;
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95em;
+      display: block;
+      margin: 0 auto;
+    }
+    .alert-btn:hover {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <div class="alert-title">Neutron Alert</div>
+  <div id="message" class="alert-message"></div>
+  <button id="ok-button" class="alert-btn" onclick="window.java.close()">OK</button>
+</body>
+</html>
