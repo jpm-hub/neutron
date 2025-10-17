@@ -8,14 +8,27 @@
       height: 100%;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
+      background: transparent;
       font-family: Arial, sans-serif;
-      overflow: hidden; /* Prevent scrollbars */
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .main {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      max-width: 340px;
+      padding: 24px 18px 18px 18px;
     }
     .alert-title {
       font-size: 1em;
       color: #f44336;
-      margin-top: 40px;
+      margin-top: 0;
       margin-bottom: 8px;
       font-weight: bold;
       text-align: center;
@@ -43,8 +56,10 @@
   </style>
 </head>
 <body>
-  <div class="alert-title">Neutron Alert</div>
-  <div id="message" class="alert-message"></div>
-  <button id="ok-button" class="alert-btn" onclick="window.java.close()">OK</button>
+  <div class="main">
+    <div class="alert-title">Neutron Alert</div>
+    <div id="message" class="alert-message"></div>
+    <button id="ok-button" class="alert-btn" onclick="window.java.close()">OK</button>
+  </div>
 </body>
 </html>

@@ -16,7 +16,7 @@ import netscape.javascript.JSObject;
 public class Neutron extends Application {
     static private Controller controller = null;
     static private String title = "Neutron App";
-    static private String bgColor = "#ffffff";
+    static private String initialBackgroundColor = "#ffffff";
     static private String htmlResourcePath = "/ui/index.html";
     static private double width = 630;
     static private double height = 410;
@@ -32,29 +32,31 @@ public class Neutron extends Application {
     }
 
     public static void launch(Controller controller, String htmlResourcePath, String title, double width,
-            double height, String backgroundColor, String[] args) {
+            double height, String initialBackgroundColor, String[] args) {
         Neutron.controller = controller;
         Neutron.htmlResourcePath = htmlResourcePath;
         Neutron.title = title;
         Neutron.width = width;
         Neutron.height = height;
-        Neutron.bgColor = backgroundColor;
+        Neutron.initialBackgroundColor = initialBackgroundColor;
         Neutron.launch(Neutron.class, args);
     }
-
+    public static void show(Stage stage){ stage.show();}
     public static void show(Controller controller, String htmlResourcePath, String title, double width,
-            double height, String backgroundColor, StageStyle stageStyle) {
+            double height, String initialBackgroundColor, StageStyle stageStyle) {
         if (controller == null) {
             throw new RuntimeException("a controller is not set. Please create a class that extends Controller and set it.");
         }
         Stage newStage = new Stage();
         var webView = new WebView();
         var stack = new StackPane();
+        stack.setStyle("-fx-background-color: transparent;");
+        webView.setPageFill(Color.TRANSPARENT);
         controller.setView(webView, newStage, stack);
         controller._start();
         var colorPane = new Pane();
         var engine = webView.getEngine();
-        colorPane.setStyle("-fx-background-color: " + bgColor + ";");
+        colorPane.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && controller != null) {
                 ((JSObject) engine.executeScript("window")).setMember("java", controller);
@@ -64,8 +66,8 @@ public class Neutron extends Application {
             }
             if (controller == null) {
                 throw new RuntimeException(
-                        "a controller is not set. Please set a controller before launching the application.");
-            }
+                    "a controller is not set. Please set a controller before launching the application.");
+                }
         });
         engine.load(Neutron.class.getResource(htmlResourcePath).toExternalForm());
         stack.getChildren().add(webView);
@@ -73,7 +75,7 @@ public class Neutron extends Application {
         newStage.initStyle(stageStyle);
         controller.beforeMount();
         newStage.setTitle(title);
-        newStage.setScene(new Scene(stack, width, height, Color.web(bgColor)));
+        newStage.setScene(new Scene(stack, width, height, Color.TRANSPARENT));
         newStage.show();
         newStage.setOnCloseRequest(e -> {
             controller._stop();
@@ -86,7 +88,7 @@ public class Neutron extends Application {
         private String title = "Neutron App";
         private double width = 630;
         private double height = 410;
-        private String bgColor = "#ffffff";
+        private String initialBackgroundColor = "#ffffff";
         private Controller controller = null;
         private StageStyle stageStyle = StageStyle.DECORATED;
 
@@ -106,8 +108,8 @@ public class Neutron extends Application {
             return this;
         }
 
-        public builder backgroundColor(String bgColor) {
-            this.bgColor = bgColor;
+        public builder initialBackgroundColor(String initialBackgroundColor) {
+            this.initialBackgroundColor = initialBackgroundColor;
             return this;
         }
 
@@ -122,12 +124,12 @@ public class Neutron extends Application {
         }
 
         public void launch(String[] args) {
-            Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.bgColor,
+            Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.initialBackgroundColor,
                     args);
         }
 
         public void show() {
-            Neutron.show(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.bgColor,
+            Neutron.show(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.initialBackgroundColor,
                     this.stageStyle);
         }
     }
@@ -142,11 +144,13 @@ public class Neutron extends Application {
         Neutron.app = this;
         WebView webView = new WebView();
         StackPane stack = new StackPane();
+        stack.setStyle("-fx-background-color: transparent;");
+        webView.setPageFill(Color.TRANSPARENT);
         controller.setView(webView, primaryStage, stack);
         controller._start();
         Pane colorPane = new Pane();
         WebEngine engine = webView.getEngine();
-        colorPane.setStyle("-fx-background-color: " + bgColor + ";");
+        colorPane.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && controller != null) {
                 ((JSObject) engine.executeScript("window")).setMember("java", controller);
@@ -164,7 +168,7 @@ public class Neutron extends Application {
         stack.getChildren().add(webView);
         stack.getChildren().add(colorPane);
         controller.beforeMount();
-        primaryStage.setScene(new Scene(stack, width, height, Color.web(bgColor)));
+        primaryStage.setScene(new Scene(stack, width, height));
         primaryStage.show();
         primaryStage.setOnCloseRequest(e -> {
             controller._stop();

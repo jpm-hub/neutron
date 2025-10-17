@@ -32,6 +32,7 @@ public abstract class Controller {
     private List<String> listOfDraggableElements = new ArrayList<>();
     private boolean confirmCallbackSet = false;
     private boolean alertHandlerSet = false;
+    private MsgBoxController msgCtrl = null;
 
     public interface ControllerRunnable {
         void run(Stage primaryStage, WebView webView, WebEngine engine);
@@ -120,7 +121,13 @@ public abstract class Controller {
     }
 
     public void log(String s) {System.out.println(" JS > " + s);}
-    public void close() {primaryStage.close();}
+    public void close() {
+        try {
+            primaryStage.close();
+        } catch (NullPointerException e) {
+            System.err.println("Cannot close stage, primaryStage before starting");
+        }
+    }
 
     public final void setDraggableElement(String htmlNodeId) {
         if (isDomReady == false) {
@@ -208,7 +215,7 @@ public abstract class Controller {
         }
         if (!alertHandlerSet) {
             engine.setOnAlert(event -> {
-                var msgBoxController = new MsgBoxController();
+                var msgBoxController = MsgBoxController.from(this.msgCtrl);
                 msgBoxController.setMessageInnerHTML(event.getData());
                 Neutron.alert(msgBoxController);
             });
@@ -250,8 +257,7 @@ public abstract class Controller {
             onAfterMount.run(primaryStage, webView, engine);
         }
     }
-    public final void setMessageBoxHandlers(EventHandler<WebEvent<String>> alertHandler, Callback<String, Boolean> confirmCallback) {
-        if (alertHandler != null) {engine.setOnAlert(alertHandler); alertHandlerSet = true;}
-        if (confirmCallback != null) {engine.setConfirmHandler(confirmCallback); confirmCallbackSet = true;}
+    public final void setMessageBoxController(MsgBoxController msgCtrl) {
+        this.msgCtrl = msgCtrl;
     }
 }

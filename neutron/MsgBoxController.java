@@ -12,12 +12,12 @@ public class MsgBoxController extends Controller {
     private String cancelButtonText = "Cancel";
     private double height = 170;
     private double width = 310;
-    private String bgColor = "#ffffff;";
+    private String bgColor = "#ffffff";
     private StageStyle stageStyle = StageStyle.UTILITY;
     private boolean confirmResult;
 
     public MsgBoxController() {
-        onStart( (primaryStage, webView, engine) -> {
+        onStart( (primaryStage, _, _) -> {
             primaryStage.setAlwaysOnTop(true);
             primaryStage.setResizable(false);
         });
@@ -50,11 +50,13 @@ public class MsgBoxController extends Controller {
     public double getHeight() { return height; }
     public String getBackgroundColor() { return bgColor; }
     public StageStyle getStageStyle() { return stageStyle; }
+    public MsgBoxController setStageStyle(StageStyle stageStyle) { this.stageStyle = stageStyle; return this; }
     public MsgBoxController setAlertHtmlPath(String alertHtmlPath) { this.alertHtmlPath = alertHtmlPath; return this; }
     public MsgBoxController setConfirmHtmlPath(String confirmHtmlPath) { this.confirmHtmlPath = confirmHtmlPath; return this; }
     public MsgBoxController setTitleInnerHTML(String title) { this.title = title; return this; }
     public MsgBoxController setOkButtonText(String okButtonText) { this.okButtonText = okButtonText; return this; }
     public MsgBoxController setCancelButtonText(String cancelButtonText) { this.cancelButtonText = cancelButtonText; return this; }
+    public MsgBoxController setBackgroundColor(String backgroundColor) { this.bgColor = backgroundColor; return this; }
     public MsgBoxController setMessageInnerHTML(String message) { this.message = message; return this; }
     public MsgBoxController setSize(double width, double height) {
         this.width = width;
@@ -69,4 +71,19 @@ public class MsgBoxController extends Controller {
     public boolean getConfirmResult() {
         return this.confirmResult;
     }
+
+    public static MsgBoxController from(MsgBoxController msgCtrl) {
+        MsgBoxController newCtrl = new MsgBoxController();
+        newCtrl.setAlertHtmlPath(msgCtrl.getAlertHtmlPath());
+        newCtrl.setConfirmHtmlPath(msgCtrl.getConfirmHtmlPath());
+        newCtrl.setTitleInnerHTML(msgCtrl.getTitle());
+        newCtrl.setOkButtonText(msgCtrl.getOkButtonText());
+        newCtrl.setCancelButtonText(msgCtrl.getCancelButtonText());
+        newCtrl.setMessageInnerHTML(msgCtrl.getMessage());
+        newCtrl.setSize(msgCtrl.getWidth(), msgCtrl.getHeight());
+        newCtrl.setBackgroundColor(msgCtrl.getBackgroundColor());
+        newCtrl.setStageStyle(msgCtrl.getStageStyle());
+        return newCtrl;
+    }
+
 }
