@@ -4,14 +4,11 @@ import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Preloader;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import netscape.javascript.JSObject;
 
 public class Neutron extends Application {
     static private Controller controller = null;
@@ -20,10 +17,15 @@ public class Neutron extends Application {
     static private String htmlResourcePath = "/ui/index.html";
     static private double width = 630;
     static private double height = 410;
-    static private boolean verbose = false;
+    static private boolean verbose = true;
     static private Application app = null;
 
     public static void setVerbose(boolean verbose) {
+        if (!verbose) {
+            System.out.println("Neutron verbose set to false");
+        } else {
+            System.out.println("Neutron verbose set to true");
+        }
         Neutron.verbose = verbose;
     }
 
@@ -31,55 +33,82 @@ public class Neutron extends Application {
         return Neutron.verbose;
     }
 
-    public static void launch(Controller controller, String htmlResourcePath, String title, double width,
-            double height, String initialBackgroundColor, String[] args) {
-        Neutron.controller = controller;
+    public static void launch() {
+        Neutron.controller = checkController(null);
+        Neutron.controller.onAfterMount((c) -> {
+            c.call("showPID", ProcessHandle.current().pid());
+            c.setDraggableElement("logo");
+        });
+        Neutron.launch(Neutron.class);
+    }
+
+    public static void launch(String htmlResourcePath) {
+        Neutron.controller = checkController(null);
         Neutron.htmlResourcePath = htmlResourcePath;
-        Neutron.title = title;
-        Neutron.width = width;
-        Neutron.height = height;
-        Neutron.initialBackgroundColor = initialBackgroundColor;
+        Neutron.launch(Neutron.class);
+    }
+
+    public static void launch(String[] args) {
+        Neutron.controller = checkController(null);
+        Neutron.controller.onAfterMount((c) -> {
+            c.call("showPID", ProcessHandle.current().pid());
+            c.setDraggableElement("logo");
+        });
         Neutron.launch(Neutron.class, args);
     }
-    public static void show(Stage stage){ stage.show();}
-    public static void show(Controller controller, String htmlResourcePath, String title, double width,
-            double height, String initialBackgroundColor, StageStyle stageStyle) {
-        if (controller == null) {
-            throw new RuntimeException("a controller is not set. Please create a class that extends Controller and set it.");
+
+    public static void launch(Controller ctrl, String htmlResourcePath, String title, double width,
+            double height, String initialBackgroundColor, String[] args) {
+        
+        Neutron.controller = checkController(ctrl);
+        Neutron.htmlResourcePath = (htmlResourcePath != null) ? htmlResourcePath : Neutron.htmlResourcePath;
+        Neutron.title = (title != null) ? title : "no title";
+        Neutron.width = (width >= 0) ? width : Neutron.width;
+        Neutron.height = (height >= 0) ? height : Neutron.height;
+        Neutron.initialBackgroundColor = (initialBackgroundColor != null) ? initialBackgroundColor
+                : Neutron.initialBackgroundColor;
+        Neutron.launch(Neutron.class, args);
+    }
+
+    private static class MyController extends Controller {
+    }
+
+    private static Controller checkController(Controller ctrl) {
+        if (ctrl == null) {
+            return new MyController();
         }
-        Stage newStage = new Stage();
-        var webView = new WebView();
-        var stack = new StackPane();
-        stack.setStyle("-fx-background-color: transparent;");
-        webView.setPageFill(Color.TRANSPARENT);
-        controller.setView(webView, newStage, stack);
-        controller._start();
-        var colorPane = new Pane();
-        var engine = webView.getEngine();
-        colorPane.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
-        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-            if (newState == javafx.concurrent.Worker.State.SUCCEEDED && controller != null) {
-                ((JSObject) engine.executeScript("window")).setMember("java", controller);
-                controller.afterMount();
-                colorPane.setVisible(false);
-                controller._makeDomReady();
-            }
-            if (controller == null) {
-                throw new RuntimeException(
-                    "a controller is not set. Please set a controller before launching the application.");
-                }
-        });
-        engine.load(Neutron.class.getResource(htmlResourcePath).toExternalForm());
-        stack.getChildren().add(webView);
-        stack.getChildren().add(colorPane);
-        newStage.initStyle(stageStyle);
-        controller.beforeMount();
-        newStage.setTitle(title);
-        newStage.setScene(new Scene(stack, width, height, Color.TRANSPARENT));
-        newStage.show();
-        newStage.setOnCloseRequest(e -> {
-            controller._stop();
-        });
+        if (ctrl.getClass().isAnonymousClass()) {
+            System.err.println(
+                    "Controller cannot be anonymous nor can be implemented\ncreate a stand alone class that extends neutron.Controller");
+            System.exit(1);
+        }
+        return ctrl;
+    }
+
+    public static void show(Stage stage) {
+        stage.show();
+    }
+
+    public static void show(Controller c, String htmlResourcePath, String title, double w,
+            double h, String initialBackgroundColor, StageStyle stageStyle) {
+        if (app == null) {
+            System.err.println("Neurtron needs to be launched first before show()");
+            System.exit(1);
+        }
+        var ctrl = checkController(c);
+        var stage = newPage(new Stage(), stageStyle, ctrl, htmlResourcePath, title, w, h, initialBackgroundColor);
+        stage.show();
+    }
+
+    public static void showAndWait(Controller c, String htmlResourcePath, String title, double w,
+            double h, String initialBackgroundColor, StageStyle stageStyle) {
+        if (app == null) {
+            System.err.println("Neurtron needs to be launched first before show()");
+            System.exit(1);
+        }
+        var ctrl = checkController(c);
+        var stage = newPage(new Stage(), stageStyle, ctrl, htmlResourcePath, title, w, h, initialBackgroundColor);
+        stage.showAndWait();
     }
 
     // Builder pattern for Neutron configuration
@@ -114,7 +143,7 @@ public class Neutron extends Application {
         }
 
         public builder controller(Controller controller) {
-            this.controller = controller;
+            this.controller = checkController(controller);
             return this;
         }
 
@@ -124,12 +153,14 @@ public class Neutron extends Application {
         }
 
         public void launch(String[] args) {
-            Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.initialBackgroundColor,
+            Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height,
+                    this.initialBackgroundColor,
                     args);
         }
 
         public void show() {
-            Neutron.show(this.controller, this.htmlResourcePath, this.title, this.width, this.height, this.initialBackgroundColor,
+            Neutron.show(this.controller, this.htmlResourcePath, this.title, this.width, this.height,
+                    this.initialBackgroundColor,
                     this.stageStyle);
         }
     }
@@ -140,39 +171,25 @@ public class Neutron extends Application {
             System.err.println("a controller is not set. Please create a class that extends Controller and set it.");
             System.exit(1);
         }
-        // get Application
         Neutron.app = this;
+        newPage(primaryStage, StageStyle.DECORATED, controller, htmlResourcePath, title, Neutron.width, Neutron.height,
+                initialBackgroundColor);
+        primaryStage.show();
+    }
+
+    private static Stage newPage(Stage primaryStage, StageStyle stageStyle, Controller ctrl, String htmlResourcePath,
+            String title, double w, double h, String initialBackgroundColor) {
         WebView webView = new WebView();
         StackPane stack = new StackPane();
-        stack.setStyle("-fx-background-color: transparent;");
+        stack.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         webView.setPageFill(Color.TRANSPARENT);
-        controller.setView(webView, primaryStage, stack);
-        controller._start();
-        Pane colorPane = new Pane();
-        WebEngine engine = webView.getEngine();
-        colorPane.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
-        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-            if (newState == javafx.concurrent.Worker.State.SUCCEEDED && controller != null) {
-                ((JSObject) engine.executeScript("window")).setMember("java", controller);
-                controller._makeDomReady();
-                controller.afterMount();
-                colorPane.setVisible(false);
-            }
-            if (controller == null) {
-                throw new RuntimeException(
-                        "a controller is not set. Please set a controller before launching the application.");
-            }
-        });
-        engine.load(Neutron.class.getResource(htmlResourcePath).toExternalForm());
+        ctrl.attachController(webView, primaryStage, stack);
+        webView.getEngine().load(Neutron.class.getResource(htmlResourcePath).toExternalForm());
+        primaryStage.initStyle(stageStyle);
         primaryStage.setTitle(title);
         stack.getChildren().add(webView);
-        stack.getChildren().add(colorPane);
-        controller.beforeMount();
-        primaryStage.setScene(new Scene(stack, width, height));
-        primaryStage.show();
-        primaryStage.setOnCloseRequest(e -> {
-            controller._stop();
-        });
+        primaryStage.setScene(new Scene(stack, w, h, Color.TRANSPARENT));
+        return primaryStage;
     }
 
     @Override
@@ -226,11 +243,14 @@ public class Neutron extends Application {
     }
 
     public static void alert(MsgBoxController ctrl) {
-        Neutron.show(ctrl, ctrl.getAlertHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
+        ctrl.setHiddenCancelButton();
+        Neutron.showAndWait(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
                 ctrl.getBackgroundColor(), ctrl.getStageStyle());
     }
-    public static MsgBoxController confirm(MsgBoxController ctrl) {
-        Neutron.show(ctrl, ctrl.getConfirmHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(), ctrl.getBackgroundColor(), ctrl.getStageStyle());
-        return ctrl;
+
+    public static boolean confirm(MsgBoxController ctrl) {
+        Neutron.showAndWait(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
+                ctrl.getBackgroundColor(), ctrl.getStageStyle());
+        return ctrl.getConfirmResult();
     }
 }

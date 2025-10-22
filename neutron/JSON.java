@@ -11,8 +11,8 @@ public interface JSON {
             if (Neutron.isVerbose()) System.out.println(s);
             return s;
         } catch (Exception e) {
-            System.err.println("failed to parse JSON " + j.toString());
-            return "failed to parse JSON";
+            System.err.println("failed to parse JSON, class might be empty or non-public fields");
+            return "{error:\"failed to parse JSON, java class might be empty or non-public fields\"}";
         }
     };
 

@@ -3,124 +3,190 @@ package neutron;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.scene.Cursor;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebEvent;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import netscape.javascript.JSObject;
 
 public abstract class Controller {
-    protected WebView webView;
-    protected WebEngine engine;
-    protected Stage primaryStage;
-    protected Pane root;
+    private WebView webView;
+    private WebEngine engine;
+    private Stage primaryStage;
+    private StackPane root;
     private double xOffset = 0;
     private double yOffset = 0;
     private boolean isDomReady = false;
-    private ControllerRunnable onStart = null;
-    private ControllerRunnable onBeforeMount = null;
-    private ControllerRunnable onAfterMount = null;
-    private ControllerRunnable onStop = null;
-    private Runnable ronStart = null;
-    private Runnable ronBeforeMount = null;
-    private Runnable ronAfterMount = null;
-    private Runnable ronStop = null;
+    private CtrlRunnable onAfterMount = null;
+    private CtrlRunnable onStart = null;
+    private CtrlRunnable onBeforeMount = null;
+    private CtrlRunnable onStop = null;
     private List<String> listOfDraggableElements = new ArrayList<>();
-    private boolean confirmCallbackSet = false;
-    private boolean alertHandlerSet = false;
     private MsgBoxController msgCtrl = null;
 
-    public interface ControllerRunnable {
+    public static interface ControllerRunnable {
         void run(Stage primaryStage, WebView webView, WebEngine engine);
     }
 
+    public static interface CtrlRunnable {
+        void run(Controller ctrl);
+    }
 
-    public final void setView(WebView webView, Stage primaryStage, Pane root) {
+    public final void attachController(WebView webView, Stage primaryStage, StackPane root) {
         this.webView = webView;
         this.engine = webView.getEngine();
         this.primaryStage = primaryStage;
         this.root = root;
+        _start();
+        WebEngine engine = webView.getEngine();
+        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == javafx.concurrent.Worker.State.SUCCEEDED) {
+                ((JSObject) engine.executeScript("window")).setMember("java", this);
+                _makeDomReady();
+                _afterMount();
+            }
+        });
+        primaryStage.setOnCloseRequest(e -> {
+            _stop();
+        });
+        _beforeMount();
     }
 
     public final void _makeDomReady() {
         isDomReady = true;
         engine.executeScript("""
-            (()=>{
-                window.js = {};
-                document.dispatchEvent(new CustomEvent("neutron-ready"));
-                window.onerror = function(message, source, lineno, colno, error) {
-                    if (window.java && window.java.log) {
-                        window.java.log(`JS ERROR:  at ::`);
-                    }
-                };
-                ['log', 'warn', 'error'].forEach(t => {
-                    const orig = console[t];
-                    console[t] = (...args) => {
-                        orig(...args);
-                        window.java.log(`[${t.toUpperCase()}] ${args.join(' ')}`);
-                    };
-                });
-            })();
-        """);
+                    (()=>{
+                        window.js = {};
+                        window.dispatchEvent(new CustomEvent("neutron-ready"));
+                        window.onerror = function(message, source, lineno, colno, error) {
+                            if (window.java && window.java.log) {
+                                window.java.print(`JS ERROR: \n at ::`);
+                            }
+                        };
+                        ['log', 'warn', 'error'].forEach(t => {
+                            const orig = console[t];
+                            console[t] = (...args) => {
+                                orig(...args);
+                                window.java.print(`[console.${t}] ${args.join(' ')}`);
+                            };
+                        });
+                    })();
+                """);
 
         if (Neutron.isVerbose()) {
-            System.out.println("'neutron-ready' event dispatched on document, DOM is ready to call Java functions and controller is ready to call JS functions");
+            System.out.println(
+                """
+                [NEUTRON-VERBOSE] 'neutron-ready' event dispatched on window !!!
+                [NEUTRON-VERBOSE] DOM is ready to call Java functions through 'window.java.<your_java_function_name>(args...);'
+                [NEUTRON-VERBOSE] controller is ready to call JS functions through controller.call(<your_js_function>, args...);""");
         }
     }
-    protected final boolean isDomReady() {return isDomReady;}
-    protected final void call(String func) {
+
+    protected final boolean isDomReady() {
+        return isDomReady;
+    }
+
+    protected final void execJs(String code) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call " + func);
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot eval js code");
             return;
         }
         if (Neutron.isVerbose())
-            System.out.println("window.js." + func + "();");
-        Platform.runLater(() -> engine.executeScript("window.js." +func + "();"));
+            System.out.println("[NEUTRON-VERBOSE] " + code);
+        Platform.runLater(() -> engine.executeScript(code));
     }
 
-    protected final void call(String func, JSON... args) {
+    protected final void call(String funcName) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call " + func);
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
+            return;
+        }
+        if (Neutron.isVerbose())
+            System.out.println("[NEUTRON-VERBOSE] window.js." + funcName + "();");
+        Platform.runLater(() -> engine.executeScript("window.js." + funcName + "();"));
+    }
+
+    protected final void call(String funcName, JSON arg) {
+        if (isDomReady == false) {
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
             return;
         }
         StringBuilder s = new StringBuilder("window.js.");
-        s.append(func);
+        s.append(funcName);
+        s.append("(");
+        s.append(JSON.stringValue(arg));
+        s.append(");");
+        if (Neutron.isVerbose())
+            System.out.println("[NEUTRON-VERBOSE] " + s.toString());
+        Platform.runLater(() -> engine.executeScript(s.toString()));
+    }
+
+    protected final void call(String funcName, Object... args) {
+        if (isDomReady == false) {
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
+            return;
+        }
+        StringBuilder s = new StringBuilder("window.js.");
+        s.append(funcName);
         s.append("(");
         for (int i = 0; i < args.length; i++) {
-            s.append(JSON.stringValue(args[i]));
+            if (args[i] instanceof String)
+                s.append("\'").append(args[i]).append("\'");
+            else
+                s.append(args[i]);
             if (i < args.length - 1)
                 s.append(",");
         }
         s.append(");");
         if (Neutron.isVerbose())
-            System.out.println(s.toString());
+            System.out.println("[NEUTRON-VERBOSE] " + s.toString());
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    protected final void call(String func, Object... args) {
+    protected final void emit(String event) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call " + func);
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
         }
-        StringBuilder s = new StringBuilder("window.js.");
-        s.append(func);
-        s.append("(");
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof String) s.append("\'").append(args[i]).append("\'");
-            else s.append(args[i]);
-            if (i < args.length - 1) s.append(",");
-        }
-        s.append(");");
         if (Neutron.isVerbose())
-            System.out.println(s.toString());
+            System.out.println("[NEUTRON-VERBOSE] window.dispatchEvent(new CustomEvent(\"" + event + "\"));");
+        Platform.runLater(() -> engine.executeScript("window.dispatchEvent(new CustomEvent(\"" + event + "\"));"));
+    }
+
+    protected final void emit(String event, JSON arg) {
+        if (isDomReady == false) {
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
+            return;
+        }
+        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent(\"" + event + "\",");
+        s.append(JSON.stringValue(arg));
+        s.append("));");
+        if (Neutron.isVerbose())
+            System.out.println("[NEUTRON-VERBOSE] " + s.toString());
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    public void log(String s) {System.out.println(" JS > " + s);}
+    protected final void emit(String event, Object data) {
+        if (isDomReady == false) {
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
+            return;
+        }
+        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent(\"" + event + "\",");
+        if (data instanceof String)
+            s.append("\'").append(data).append("\'");
+        else
+            s.append(data);
+        s.append("));");
+        if (Neutron.isVerbose())
+            System.out.println("[NEUTRON-VERBOSE] " + s.toString());
+        Platform.runLater(() -> engine.executeScript(s.toString()));
+    }
+
+    public final void print(String s) {
+        System.out.println(s);
+    }
+
     public void close() {
         try {
             primaryStage.close();
@@ -131,7 +197,7 @@ public abstract class Controller {
 
     public final void setDraggableElement(String htmlNodeId) {
         if (isDomReady == false) {
-            System.err.println("DOM not ready yet, cannot call setDraggableElement");
+            System.err.println("'neutron-ready' event did not dispatch yet, cannot call setDraggableElement");
             return;
         }
         JSObject element = (JSObject) engine.executeScript(
@@ -145,52 +211,54 @@ public abstract class Controller {
             return;
         }
         engine.executeScript("""
-            (()=>{
-                const el = document.getElementById('%s');
-                let isDragging = false;
-                el.addEventListener('mousedown', e => {
-                    e.preventDefault();
-                    isDragging = true;
-                    window.java._startDrag(e.screenX, e.screenY);
-                    document.body.style.userSelect = 'none';
-                    const move = e => {
-                        if (isDragging) window.java._doDrag(e.screenX, e.screenY);
-                    };
-                    const up = e => {
-                        if (!isDragging) return;
-                        isDragging = false;
-                        window.java._endDrag();
-                        document.body.style.userSelect = 'auto';
-                        document.removeEventListener('mousemove', move);
-                        el.removeEventListener('mouseup', up);
-                    };
-                    document.addEventListener('mousemove', move);
-                    el.addEventListener('mouseup', up);
-            });})();""".formatted(htmlNodeId));
+                (()=>{
+                    const el = document.getElementById('%s');
+                    let isDragging = false;
+                    el.addEventListener('mousedown', e => {
+                        e.preventDefault();
+                        isDragging = true;
+                        window.java._startDrag(e.screenX, e.screenY);
+                        document.body.style.userSelect = 'none';
+                        const move = e => {
+                            if (isDragging) window.java._doDrag(e.screenX, e.screenY);
+                        };
+                        const up = e => {
+                            if (!isDragging) return;
+                            isDragging = false;
+                            window.java._endDrag();
+                            document.body.style.userSelect = 'auto';
+                            document.removeEventListener('mousemove', move);
+                            el.removeEventListener('mouseup', up);
+                        };
+                        document.addEventListener('mousemove', move);
+                        el.addEventListener('mouseup', up);
+                });})();""".formatted(htmlNodeId));
         listOfDraggableElements.add(htmlNodeId);
     }
 
     public final void _doDrag(double x, double y) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call doDrag");
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call doDrag");
             return;
         }
         primaryStage.getScene().setCursor(Cursor.CLOSED_HAND);
         primaryStage.setX(x - xOffset);
         primaryStage.setY(y - yOffset);
     }
+
     public final void _startDrag(double x, double y) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call startDrag");
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call startDrag");
             return;
         }
         primaryStage.getScene().setCursor(Cursor.OPEN_HAND);
         xOffset = x - primaryStage.getX();
         yOffset = y - primaryStage.getY();
     }
+
     public final void _endDrag(double x, double y) {
         if (isDomReady == false) {
-            System.out.println("DOM not ready yet, cannot call startDrag");
+            System.out.println("'neutron-ready' event did not dispatch yet, cannot call startDrag");
             return;
         }
         primaryStage.getScene().setCursor(Cursor.DEFAULT);
@@ -198,66 +266,75 @@ public abstract class Controller {
         yOffset = 0;
     }
 
-    public final void onStart(ControllerRunnable r) { this.onStart = r; }
-    public final void onBeforeMount(ControllerRunnable r) { this.onBeforeMount = r; }
-    public final void onAfterMount(ControllerRunnable r) { this.onAfterMount = r; }
-    public final void onStop(ControllerRunnable r) { this.onStop = r; }
-    public final void onStart(Runnable r) { this.ronStart = r; }
-    public final void onBeforeMount(Runnable r) { this.ronBeforeMount = r; }
-    public final void onAfterMount(Runnable r) { this.ronAfterMount = r; }
-    public final void onStop(Runnable r) { this.ronStop = r; }
+    public final void onStart(CtrlRunnable r) {
+        this.onStart = r;
+    }
+
+    public final void onBeforeMount(CtrlRunnable r) {
+        this.onBeforeMount = r;
+    }
+
+    public final void onAfterMount(CtrlRunnable r) {
+        this.onAfterMount = r;
+    }
+
+    public final void onStop(CtrlRunnable r) {
+        this.onStop = r;
+    }
 
     public final void _start() {
-        if (ronStart != null) {
-            ronStart.run();
-        }else if (onStart != null) {
-            onStart.run(primaryStage, webView, engine);
+        if (onStart != null) {
+            onStart.run(this);
         }
-        if (!alertHandlerSet) {
-            engine.setOnAlert(event -> {
-                var msgBoxController = MsgBoxController.from(this.msgCtrl);
-                msgBoxController.setMessageInnerHTML(event.getData());
-                Neutron.alert(msgBoxController);
-            });
-        }
-        // if (!confirmCallbackSet) {
-        engine.setConfirmHandler(event -> {
-            throw new UnsupportedOperationException("""
-            \n___________________________________________________________________________________
-                Confirm dialog not yet supported, please just make a modal in your application.
-                or help fix this ...
-                Somebody please fix this: https://github.com/jpm-hub/neutron
-            ___________________________________________________________________________________
-            """);
+        engine.setOnAlert(event -> {
+            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
+                    : new MsgBoxController();
+            msgBoxController.setMessageInnerHTML(event.getData());
+            Neutron.alert(msgBoxController);
         });
-        //}
+        engine.setConfirmHandler(event -> {
+            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
+                    : new MsgBoxController();
+            msgBoxController.setMessageInnerHTML(event);
+            return Neutron.confirm(msgBoxController);
+        });
     }
 
     public final void _stop() {
-        if (ronStop != null) {
-            ronStop.run();
-        } else
         if (onStop != null) {
-            onStop.run(primaryStage, webView, engine);
+            onStop.run(this);
         }
     }
 
-    public final void beforeMount() {
-        if (ronBeforeMount != null) {
-            ronBeforeMount.run();
-        } else if (onBeforeMount != null) {
-            onBeforeMount.run(primaryStage, webView, engine);
+    public final void _beforeMount() {
+        if (onBeforeMount != null) {
+            onBeforeMount.run(this);
         }
     }
 
-    public final void afterMount() {
-        if (ronAfterMount != null) {
-            ronAfterMount.run();
-        } else if (onAfterMount != null) {
-            onAfterMount.run(primaryStage, webView, engine);
+    public final void _afterMount() {
+        if (onAfterMount != null) {
+            onAfterMount.run(this);
         }
     }
+
     public final void setMessageBoxController(MsgBoxController msgCtrl) {
         this.msgCtrl = msgCtrl;
+    }
+
+    public final WebView getWebView() {
+        return webView;
+    }
+
+    public final WebEngine getEngine() {
+        return engine;
+    }
+
+    public final Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public final StackPane getRootPane() {
+        return root;
     }
 }

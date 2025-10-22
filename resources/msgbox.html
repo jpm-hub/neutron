@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Alert Message</title>
+  <title>Message</title>
   <style>
     html, body {
       height: 100%;
@@ -17,13 +17,9 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-    }
-    .main {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      flex-direction: column;
       max-width: 340px;
-      padding: 24px 18px 18px 18px;
+      margin: 0 auto;
     }
     .alert-title {
       font-size: 1em;
@@ -39,6 +35,12 @@
       margin-bottom: 14px;
       text-align: center;
     }
+    .button-container {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
+    }
     .alert-btn {
       background: #f44336;
       color: #fff;
@@ -47,8 +49,6 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.95em;
-      display: block;
-      margin: 0 auto;
     }
     .alert-btn:hover {
       background: #d32f2f;
@@ -56,10 +56,11 @@
   </style>
 </head>
 <body>
-  <div class="main">
-    <div class="alert-title">Neutron Alert</div>
-    <div id="message" class="alert-message"></div>
-    <button id="ok-button" class="alert-btn" onclick="window.java.close()">OK</button>
+  <div class="alert-title">Neutron Message</div>
+  <div id="message" class="alert-message"></div>
+  <div class="button-container">
+    <button id="cancel-button" class="alert-btn" >Cancel</button>
+    <button id="ok-button" class="alert-btn" >OK</button>
   </div>
 </body>
 </html>

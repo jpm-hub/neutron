@@ -1,22 +1,23 @@
 package neutron;
-import javafx.stage.StageStyle;
 
 public class App {
-    public static class MyController extends Controller {}
-    static Controller ctrl = new MyController();
-
-    public static void main(String[] args) {
-        ctrl.onAfterMount(App::showPID);
-        ctrl.setMessageBoxController(
-            new MsgBoxController()
-        );
-        new Neutron.builder()
-            .controller(ctrl)
-            .launch(args);
+    public static class MyController extends Controller {
     }
 
-    static void showPID() {
-        ctrl.call("showPID", ProcessHandle.current().pid());
-        ctrl.setDraggableElement("logo");
+    public static void main(String[] args) {
+        Neutron.setVerbose(true);
+        Neutron.launch("/ui/index.html");
+    }
+
+    public static void starter(Controller c) {
+        // Dialog<Boolean> d = new Dialog<>();
+        // d.showAndWait();
+        c.getPrimaryStage().widthProperty().addListener((obs, oldVal, newVal) -> {
+            System.out.println("Stage width changed: " + newVal);
+        });
+
+        c.getPrimaryStage().heightProperty().addListener((obs, oldVal, newVal) -> {
+            System.out.println("Stage height changed: " + newVal);
+        });
     }
 }
