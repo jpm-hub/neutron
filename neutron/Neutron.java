@@ -1,5 +1,7 @@
 package neutron;
 
+import java.nio.file.Paths;
+
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Preloader;
@@ -14,7 +16,7 @@ public class Neutron extends Application {
     static private Controller controller = null;
     static private String title = "Neutron App";
     static private String initialBackgroundColor = "#ffffff";
-    static private String htmlResourcePath = "/ui/index.html";
+    static private String htmlResourcePath = "ui/index.html";
     static private double width = 630;
     static private double height = 410;
     static private boolean verbose = true;
@@ -34,10 +36,11 @@ public class Neutron extends Application {
     }
 
     public static void launch() {
+        setVerbose(false);
         Neutron.controller = checkController(null);
         Neutron.controller.onAfterMount((c) -> {
-            c.call("showPID", ProcessHandle.current().pid());
             c.setDraggableElement("logo");
+            c.execJs("document.getElementById('rpl').innerText = 'PID: " + ProcessHandle.current().pid() + "' ;");
         });
         Neutron.launch(Neutron.class);
     }
@@ -49,10 +52,11 @@ public class Neutron extends Application {
     }
 
     public static void launch(String[] args) {
+        setVerbose(false);
         Neutron.controller = checkController(null);
         Neutron.controller.onAfterMount((c) -> {
-            c.call("showPID", ProcessHandle.current().pid());
             c.setDraggableElement("logo");
+            c.execJs("document.getElementById('rpl').innerText = 'PID: " + ProcessHandle.current().pid() + "' ;");
         });
         Neutron.launch(Neutron.class, args);
     }
@@ -113,7 +117,7 @@ public class Neutron extends Application {
 
     // Builder pattern for Neutron configuration
     public static class builder {
-        private String htmlResourcePath = "/ui/index.html";
+        private String htmlResourcePath = "ui/index.html";
         private String title = "Neutron App";
         private double width = 630;
         private double height = 410;
@@ -184,7 +188,8 @@ public class Neutron extends Application {
         stack.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         webView.setPageFill(Color.TRANSPARENT);
         ctrl.attachController(webView, primaryStage, stack);
-        webView.getEngine().load(Neutron.class.getResource(htmlResourcePath).toExternalForm());
+        ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
+        webView.getEngine().load(Paths.get(htmlResourcePath).toUri().toString());
         primaryStage.initStyle(stageStyle);
         primaryStage.setTitle(title);
         stack.getChildren().add(webView);

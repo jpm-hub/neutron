@@ -3,7 +3,7 @@ import javafx.stage.StageStyle;
 import netscape.javascript.JSObject;
 
 public class MsgBoxController extends Controller {
-    private String msgBoxHtmlPath = "/msgbox.html";
+    private String msgBoxHtmlPath = "ui/msgbox.html";
     private String message = "";
     private String title = "Message Box";
     
@@ -33,14 +33,12 @@ public class MsgBoxController extends Controller {
             cancelButtonElement.setMember("innerHTML", cancelButtonText);
             hideCancelButton();
             getEngine().executeScript("""
-                document.getElementById('ok-button')
-                    .addEventListener('click', () => {
-                        window.java.setConfirmResult(true);
-                    });
-                document.getElementById('cancel-button')
-                    .addEventListener('click', () => {
-                        window.java.setConfirmResult(false);
-                    });
+                document.getElementById('ok-button').addEventListener('click', () => {
+                    window.java.setConfirmResult(true);
+                });
+                document.getElementById('cancel-button').addEventListener('click', () => {
+                    window.java.setConfirmResult(false);
+                });
             """);
         });
     }

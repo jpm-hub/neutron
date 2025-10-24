@@ -115,36 +115,34 @@
       </div>
       <h1>Neutron</h1>
       <div class="desc">Native desktop apps with web tech</div>
-      <button class="cta-btn" id="longClickBtn">
-        Click Me
-      </button>
-        </div>
-        <script>
-      document.addEventListener("neutron-ready", () => {
-        window.java.log("Neutron UI Loaded");
-        window.js.showPID = (e) => {  console.log("Current Process ID: " + e);};
-      });
-
+      <p class="desc" id="rpl"></p>
+      <button class="cta-btn" id="longClickBtn">Click Me</button>
+    </div>
+    <script>
+      window.addEventListener("neutron-ready", () =>
+        console.log("Neutron UI Loaded 🚀")
+      );
+      
       // Long click logic
       const btn = document.getElementById("longClickBtn");
       let longClickTimer;
       const LONG_CLICK_DURATION = 600; // ms
-
+      
       btn.addEventListener("mousedown", () => {
         longClickTimer = setTimeout(() => {
           alert("Long Click Detected!");
         }, LONG_CLICK_DURATION);
-         window.java.log('try to drag the neutron logo 😊');
+        console.log("try to drag the neutron logo 😊");
       });
 
       btn.addEventListener("mouseup", () => {
         clearTimeout(longClickTimer);
-        window.java.log('try long click the button 🎈');
+        console.log("try long click the button 🎈");
       });
 
       btn.addEventListener("mouseleave", () => {
         clearTimeout(longClickTimer);
       });
-      </script>
+    </script>
   </body>
 </html>

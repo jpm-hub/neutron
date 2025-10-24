@@ -1,5 +1,6 @@
 package neutron;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
@@ -39,10 +40,9 @@ public abstract class Controller {
         this.primaryStage = primaryStage;
         this.root = root;
         _start();
-        WebEngine engine = webView.getEngine();
-        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-            if (newState == javafx.concurrent.Worker.State.SUCCEEDED) {
-                ((JSObject) engine.executeScript("window")).setMember("java", this);
+        this.engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == javafx.concurrent.Worker.State.SUCCEEDED && this != null) {
+                ((JSObject) this.engine.executeScript("window")).setMember("java", this);
                 _makeDomReady();
                 _afterMount();
             }
@@ -53,33 +53,44 @@ public abstract class Controller {
         _beforeMount();
     }
 
-    public final void _makeDomReady() {
+    public final void loadHTML(String htmlResourcePath) {
+        _beforeMount();
+        isDomReady = false;
+        var resourceUrl = Neutron.class.getResource(htmlResourcePath).toExternalForm();
+        if( Neutron.isVerbose() ) {
+            System.out.println("[NEUTRON-VERBOSE] Loading HTML resource from: " + resourceUrl);
+        }
+        ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
+        engine.load(Paths.get(htmlResourcePath).toUri().toString());
+    }
+
+    final void _makeDomReady() {
         isDomReady = true;
         engine.executeScript("""
-                    (()=>{
-                        window.js = {};
-                        window.dispatchEvent(new CustomEvent("neutron-ready"));
-                        window.onerror = function(message, source, lineno, colno, error) {
-                            if (window.java && window.java.log) {
-                                window.java.print(`JS ERROR: \n at ::`);
-                            }
-                        };
-                        ['log', 'warn', 'error'].forEach(t => {
-                            const orig = console[t];
-                            console[t] = (...args) => {
-                                orig(...args);
-                                window.java.print(`[console.${t}] ${args.join(' ')}`);
-                            };
-                        });
-                    })();
-                """);
+            (()=>{
+                window.js = {};
+                window.onerror = function(message, source, lineno, colno, error) {
+                    if (window.java && window.java.print) {
+                        window.java.print(`JS ERROR: ${message}\n at ${source}:${lineno}:${colno}`);
+                    }
+                };
+                ['log', 'warn', 'error','info','trace','time','timeEnd','timeStamp','timeLog','assert'].forEach(t => {
+                    const orig = console[t];
+                    console[t] = (...args) => {
+                        orig(...args);
+                        window.java.print(`[console.${t}] ${args.join(' ')}`);
+                    };
+                });
+                window.dispatchEvent(new CustomEvent("neutron-ready"));
+            })();
+            """.formatted(Neutron.class.getResource("/").toExternalForm()));
 
         if (Neutron.isVerbose()) {
             System.out.println(
                 """
                 [NEUTRON-VERBOSE] 'neutron-ready' event dispatched on window !!!
-                [NEUTRON-VERBOSE] DOM is ready to call Java functions through 'window.java.<your_java_function_name>(args...);'
-                [NEUTRON-VERBOSE] controller is ready to call JS functions through controller.call(<your_js_function>, args...);""");
+                [NEUTRON-VERBOSE] DOM is ready to call Controller Methods through 'window.java.<your_java_function_name>(args...);'
+                [NEUTRON-VERBOSE] Controller is ready to call JS functions through controller.call(<your_js_function>, args...);""");
         }
     }
 
@@ -282,7 +293,7 @@ public abstract class Controller {
         this.onStop = r;
     }
 
-    public final void _start() {
+    final void _start() {
         if (onStart != null) {
             onStart.run(this);
         }
@@ -300,19 +311,19 @@ public abstract class Controller {
         });
     }
 
-    public final void _stop() {
+    final void _stop() {
         if (onStop != null) {
             onStop.run(this);
         }
     }
 
-    public final void _beforeMount() {
+    final void _beforeMount() {
         if (onBeforeMount != null) {
             onBeforeMount.run(this);
         }
     }
 
-    public final void _afterMount() {
+    final void _afterMount() {
         if (onAfterMount != null) {
             onAfterMount.run(this);
         }

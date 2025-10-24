@@ -23,3 +23,4 @@ repos:
   - default: https://repo1.maven.org/maven2/
 args:
   java: --add-modules javafx.controls,javafx.graphics,javafx.web
+  javac: -parameters

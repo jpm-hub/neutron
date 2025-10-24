@@ -8,7 +8,7 @@ public interface JSON {
     static String stringValue(JSON j) {
         try {
             var s = mapper.writeValueAsString(j);
-            if (Neutron.isVerbose()) System.out.println(s);
+            if (Neutron.isVerbose()) System.out.println("[NEUTRON-VERBOSE] " +s);
             return s;
         } catch (Exception e) {
             System.err.println("failed to parse JSON, class might be empty or non-public fields");
@@ -18,7 +18,7 @@ public interface JSON {
 
     static <T> T fromString(String s, Class<T> cls) {
         try {
-            if (Neutron.isVerbose()) System.out.println(s);
+            if (Neutron.isVerbose()) System.out.println("[NEUTRON-VERBOSE] " +s);
             return mapper.readValue(s, cls);
         } catch (Exception e) {
             System.err.println("failed to parse JSON " + e.toString());
@@ -39,7 +39,7 @@ public interface JSON {
         }
         sb.append("}");
         var s = sb.toString();
-        if (Neutron.isVerbose()) System.out.println(s);
+        if (Neutron.isVerbose()) System.out.println("[NEUTRON-VERBOSE] " + s);
         return s;
     }
 }
