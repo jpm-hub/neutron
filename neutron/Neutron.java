@@ -39,7 +39,6 @@ public class Neutron extends Application {
         setVerbose(false);
         Neutron.controller = checkController(null);
         Neutron.controller.onAfterMount((c) -> {
-            c.setDraggableElement("logo");
             c.execJs("document.getElementById('rpl').innerText = 'PID: " + ProcessHandle.current().pid() + "' ;");
         });
         Neutron.launch(Neutron.class);
@@ -55,7 +54,6 @@ public class Neutron extends Application {
         setVerbose(false);
         Neutron.controller = checkController(null);
         Neutron.controller.onAfterMount((c) -> {
-            c.setDraggableElement("logo");
             c.execJs("document.getElementById('rpl').innerText = 'PID: " + ProcessHandle.current().pid() + "' ;");
         });
         Neutron.launch(Neutron.class, args);

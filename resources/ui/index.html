@@ -119,9 +119,10 @@
       <button class="cta-btn" id="longClickBtn">Click Me</button>
     </div>
     <script>
-      window.addEventListener("neutron-ready", () =>
-        console.log("Neutron UI Loaded 🚀")
-      );
+      window.addEventListener("neutron-ready", () =>{
+        console.log("Neutron UI Loaded 🚀");
+        window.java.setDraggableElement("logo");
+      });
       
       // Long click logic
       const btn = document.getElementById("longClickBtn");
