@@ -94,11 +94,11 @@ public abstract class Controller {
         }
     }
 
-    protected final boolean isDomReady() {
+    public final boolean isDomReady() {
         return isDomReady;
     }
 
-    protected final void execJs(String code) {
+    public final void execJs(String code) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot eval js code");
             return;
@@ -108,7 +108,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript(code));
     }
 
-    protected final void call(String funcName) {
+    public final void call(String funcName) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
             return;
@@ -118,7 +118,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript("window.js." + funcName + "();"));
     }
 
-    protected final void call(String funcName, JSON arg) {
+    public final void call(String funcName, JSON arg) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
             return;
@@ -133,7 +133,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    protected final void call(String funcName, Object... args) {
+    public final void call(String funcName, Object... args) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot call " + funcName);
             return;
@@ -155,7 +155,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    protected final void emit(String event) {
+    public final void emit(String event) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
@@ -165,7 +165,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript("window.dispatchEvent(new CustomEvent(\"" + event + "\"));"));
     }
 
-    protected final void emit(String event, JSON arg) {
+    public final void emit(String event, JSON arg) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
@@ -178,7 +178,7 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    protected final void emit(String event, Object data) {
+    public final void emit(String event, Object data) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
