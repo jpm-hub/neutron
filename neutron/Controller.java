@@ -298,18 +298,6 @@ public abstract class Controller {
         if (onStart != null) {
             onStart.run(this);
         }
-        engine.setOnAlert(event -> {
-            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
-                    : new MsgBoxController();
-            msgBoxController.setMessageInnerHTML(event.getData());
-            Neutron.alert(msgBoxController);
-        });
-        engine.setConfirmHandler(event -> {
-            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
-                    : new MsgBoxController();
-            msgBoxController.setMessageInnerHTML(event);
-            return Neutron.confirm(msgBoxController);
-        });
     }
 
     final void _stop(EventType<WindowEvent> eventType) {
@@ -322,6 +310,18 @@ public abstract class Controller {
         if (onBeforeMount != null) {
             onBeforeMount.run(this);
         }
+        engine.setOnAlert(event -> {
+            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
+                    : new MsgBoxController();
+            msgBoxController.setMessageInnerHTML(event.getData());
+            Neutron.alert(msgBoxController);
+        });
+        engine.setConfirmHandler(event -> {
+            var msgBoxController = (this.msgCtrl != null) ? MsgBoxController.from(this.msgCtrl)
+                    : new MsgBoxController();
+            msgBoxController.setMessageInnerHTML(event);
+            return Neutron.confirm(msgBoxController);
+        });
     }
 
     final void _afterMount() {
