@@ -4,11 +4,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.event.EventType;
 import javafx.scene.Cursor;
 import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import netscape.javascript.JSObject;
 
 public abstract class Controller {
@@ -22,12 +24,12 @@ public abstract class Controller {
     private CtrlRunnable onAfterMount = null;
     private CtrlRunnable onStart = null;
     private CtrlRunnable onBeforeMount = null;
-    private CtrlRunnable onStop = null;
+    private CtrlRunnableEvent onStop = null;
     private List<String> listOfDraggableElements = new ArrayList<>();
     private MsgBoxController msgCtrl = null;
 
-    public static interface ControllerRunnable {
-        void run(Stage primaryStage, WebView webView, WebEngine engine);
+    public static interface CtrlRunnableEvent {
+        void run(Controller ctrl, EventType<WindowEvent> eventType);
     }
 
     public static interface CtrlRunnable {
@@ -39,7 +41,7 @@ public abstract class Controller {
         this.engine = webView.getEngine();
         this.primaryStage = primaryStage;
         this.root = root;
-        _start();
+        _beforeMount();
         this.engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && this != null) {
                 ((JSObject) this.engine.executeScript("window")).setMember("java", this);
@@ -47,10 +49,9 @@ public abstract class Controller {
                 _afterMount();
             }
         });
-        primaryStage.setOnCloseRequest(e -> {
-            _stop();
+        this.primaryStage.setOnCloseRequest(e -> {
+            _stop(e.getEventType());
         });
-        _beforeMount();
     }
 
     public final void loadHTML(String htmlResourcePath) {
@@ -289,7 +290,7 @@ public abstract class Controller {
         this.onAfterMount = r;
     }
 
-    public final void onStop(CtrlRunnable r) {
+    public final void onStop(CtrlRunnableEvent r) {
         this.onStop = r;
     }
 
@@ -311,9 +312,9 @@ public abstract class Controller {
         });
     }
 
-    final void _stop() {
+    final void _stop(EventType<WindowEvent> eventType) {
         if (onStop != null) {
-            onStop.run(this);
+            onStop.run(this, eventType);
         }
     }
 

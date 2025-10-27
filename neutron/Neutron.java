@@ -21,6 +21,7 @@ public class Neutron extends Application {
     static private double height = 410;
     static private boolean verbose = true;
     static private Application app = null;
+    static private StageStyle sStyle = StageStyle.DECORATED;
 
     public static void setVerbose(boolean verbose) {
         if (!verbose) {
@@ -60,9 +61,10 @@ public class Neutron extends Application {
     }
 
     public static void launch(Controller ctrl, String htmlResourcePath, String title, double width,
-            double height, String initialBackgroundColor, String[] args) {
+            double height, String initialBackgroundColor, StageStyle stageStyle, String[] args) {
         
         Neutron.controller = checkController(ctrl);
+        Neutron.sStyle = (stageStyle != null) ? stageStyle : Neutron.sStyle;
         Neutron.htmlResourcePath = (htmlResourcePath != null) ? htmlResourcePath : Neutron.htmlResourcePath;
         Neutron.title = (title != null) ? title : "no title";
         Neutron.width = (width >= 0) ? width : Neutron.width;
@@ -156,7 +158,7 @@ public class Neutron extends Application {
 
         public void launch(String[] args) {
             Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height,
-                    this.initialBackgroundColor,
+                    this.initialBackgroundColor, this.stageStyle,
                     args);
         }
 
@@ -174,24 +176,25 @@ public class Neutron extends Application {
             System.exit(1);
         }
         Neutron.app = this;
-        newPage(primaryStage, StageStyle.DECORATED, controller, htmlResourcePath, title, Neutron.width, Neutron.height,
+        newPage(primaryStage, sStyle, controller, htmlResourcePath, title, Neutron.width, Neutron.height,
                 initialBackgroundColor);
         primaryStage.show();
     }
 
     private static Stage newPage(Stage primaryStage, StageStyle stageStyle, Controller ctrl, String htmlResourcePath,
             String title, double w, double h, String initialBackgroundColor) {
+        ctrl._start();
         WebView webView = new WebView();
         StackPane stack = new StackPane();
         stack.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
-        webView.setPageFill(Color.TRANSPARENT);
-        ctrl.attachController(webView, primaryStage, stack);
+        webView.setPageFill(Color.web(initialBackgroundColor));
         ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
         webView.getEngine().load(Paths.get(htmlResourcePath).toUri().toString());
         primaryStage.initStyle(stageStyle);
         primaryStage.setTitle(title);
         stack.getChildren().add(webView);
-        primaryStage.setScene(new Scene(stack, w, h, Color.TRANSPARENT));
+        ctrl.attachController(webView, primaryStage, stack);
+        primaryStage.setScene(new Scene(stack, w, h, Color.web(initialBackgroundColor)));
         return primaryStage;
     }
 
