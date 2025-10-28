@@ -75,8 +75,10 @@ public class ResourceExtractor {
                 if (entry.getName().startsWith(basePath.substring(1)) && !entry.isDirectory()) {
                     Path outPath = targetDir.resolve(entry.getName().substring(basePath.length() - 1));
                     Files.createDirectories(outPath.getParent());
-                    try (InputStream in = jar.getInputStream(entry)) {
-                        Files.copy(in, outPath, StandardCopyOption.REPLACE_EXISTING);
+                    if (!Files.exists(outPath)) {
+                        try (InputStream in = jar.getInputStream(entry)) {
+                            Files.copy(in, outPath);
+                        }
                     }
                 }
             }

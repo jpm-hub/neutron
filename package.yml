@@ -1,6 +1,6 @@
 main: neutron.App
 package: neutron
-version: 1.0.0
+version: 1.0.1
 description: Neutron - A lightweight JavaFX native webview app framework
 language: java
 scripts:

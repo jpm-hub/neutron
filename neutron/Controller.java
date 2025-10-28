@@ -2,6 +2,7 @@ package neutron;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.event.EventType;
@@ -27,6 +28,7 @@ public abstract class Controller {
     private CtrlRunnableEvent onStop = null;
     private List<String> listOfDraggableElements = new ArrayList<>();
     private MsgBoxController msgCtrl = null;
+    private HashMap<String, EventHandler> eventHashMap = new HashMap<>();
 
     public static interface CtrlRunnableEvent {
         void run(Controller ctrl, EventType<WindowEvent> eventType);
@@ -34,6 +36,10 @@ public abstract class Controller {
 
     public static interface CtrlRunnable {
         void run(Controller ctrl);
+    }
+
+    public static interface EventHandler {
+        void run(Object data);
     }
 
     public final void attachController(WebView webView, Stage primaryStage, StackPane root) {
@@ -164,6 +170,10 @@ public abstract class Controller {
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] window.dispatchEvent(new CustomEvent(\"" + event + "\"));");
         Platform.runLater(() -> engine.executeScript("window.dispatchEvent(new CustomEvent(\"" + event + "\"));"));
+        var action = eventHashMap.get(event);
+        if (action != null) {
+            action.run(null);
+        }
     }
 
     public final void emit(String event, JSON arg) {
@@ -177,6 +187,10 @@ public abstract class Controller {
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] " + s.toString());
         Platform.runLater(() -> engine.executeScript(s.toString()));
+        var action = eventHashMap.get(event);
+        if (action != null) {
+            action.run(arg);
+        }
     }
 
     public final void emit(String event, Object data) {
@@ -193,6 +207,14 @@ public abstract class Controller {
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] " + s.toString());
         Platform.runLater(() -> engine.executeScript(s.toString()));
+        var action = eventHashMap.get(event);
+        if (action != null) {
+            action.run(data);
+        }
+    }
+
+    public final void on(String event, EventHandler handler) {
+        eventHashMap.put(event, handler);
     }
 
     public final void print(String s) {
