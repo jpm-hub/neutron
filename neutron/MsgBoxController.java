@@ -17,7 +17,7 @@ public class MsgBoxController extends Controller {
     private boolean isCancelButtonHidden = false;
 
     public MsgBoxController() {
-        onStart( (ctrl) -> {
+        onBeforeMount( (ctrl) -> {
             getPrimaryStage().setAlwaysOnTop(true);
             getPrimaryStage().setResizable(false);
         });
