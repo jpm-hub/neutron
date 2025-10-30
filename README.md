@@ -5,6 +5,3 @@ a webview native app builder based on javafx
 ```bash
     jpm install 
 ```
-```bash
-    jpm start 
-```
