@@ -2,6 +2,9 @@ package neutron;
 
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Preloader;
@@ -171,6 +174,7 @@ public class Neutron extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        JSON.mapper.setVisibility(PropertyAccessor.FIELD,Visibility.ANY);
         if (controller == null) {
             System.err.println("a controller is not set. Please create a class that extends Controller and set it.");
             System.exit(1);

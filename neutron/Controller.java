@@ -53,6 +53,7 @@ public abstract class Controller {
                 ((JSObject) this.engine.executeScript("window")).setMember("java", this);
                 _makeDomReady();
                 _afterMount();
+                System.gc();
             }
         });
         this.primaryStage.setOnCloseRequest(e -> {
@@ -133,7 +134,7 @@ public abstract class Controller {
         StringBuilder s = new StringBuilder("window.js.");
         s.append(funcName);
         s.append("(");
-        s.append(JSON.stringValue(arg));
+        s.append(JSON.stringify(arg));
         s.append(");");
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] " + s.toString());
@@ -162,28 +163,18 @@ public abstract class Controller {
         Platform.runLater(() -> engine.executeScript(s.toString()));
     }
 
-    public final void emit(String event) {
-        if (isDomReady == false) {
-            System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
-            return;
-        }
-        if (Neutron.isVerbose())
-            System.out.println("[NEUTRON-VERBOSE] window.dispatchEvent(new CustomEvent(\"" + event + "\"));");
-        Platform.runLater(() -> engine.executeScript("window.dispatchEvent(new CustomEvent(\"" + event + "\"));"));
-        var action = eventHashMap.get(event);
-        if (action != null) {
-            action.run(null);
-        }
-    }
-
     public final void emit(String event, JSON arg) {
         if (isDomReady == false) {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
         }
-        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent(\"" + event + "\",");
-        s.append(JSON.stringValue(arg));
-        s.append("));");
+        if ( !(arg instanceof JSON) ) {
+            emit(event, (Object) arg);
+            return;
+        }
+        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent('" + event + "',{'detail':");
+        s.append(JSON.stringify(arg));
+        s.append("}));");
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] " + s.toString());
         Platform.runLater(() -> engine.executeScript(s.toString()));
@@ -198,15 +189,21 @@ public abstract class Controller {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
         }
-        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent(\"" + event + "\",");
+        if ( data instanceof JSON ) {
+            emit(event, (JSON) data);
+            return;
+        }
+        StringBuilder s = new StringBuilder("window.dispatchEvent(new CustomEvent('" + event + "',{'detail':");
         if (data instanceof String)
-            s.append("\'").append(data).append("\'");
+            s.append("'").append(data).append("'");
         else
             s.append(data);
-        s.append("));");
+        s.append("}));");
         if (Neutron.isVerbose())
             System.out.println("[NEUTRON-VERBOSE] " + s.toString());
-        Platform.runLater(() -> engine.executeScript(s.toString()));
+        Platform.runLater(() -> {
+            engine.executeScript(s.toString());
+        });
         var action = eventHashMap.get(event);
         if (action != null) {
             action.run(data);
