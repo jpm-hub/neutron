@@ -91,7 +91,7 @@ public abstract class Controller {
                 });
                 window.dispatchEvent(new CustomEvent("neutron-ready"));
             })();
-            """.formatted(Neutron.class.getResource("/").toExternalForm()));
+            """);
 
         if (Neutron.isVerbose()) {
             System.out.println(

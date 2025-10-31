@@ -38,7 +38,7 @@ public class ResourceExtractor {
      * Extracts a resource directory (like "ui/index.html") to the same folder where the main class is located.
      * Automatically determines if resources come from a JAR or the file system.
      */
-    private static Path extractToMainDir(Class<?> mainClass, String resourcePath) throws Exception {
+    private static void extractToMainDir(Class<?> mainClass, String resourcePath) throws Exception {
         if (!resourcePath.startsWith("/")) {
             resourcePath = "/" + resourcePath;
         }
@@ -46,28 +46,32 @@ public class ResourceExtractor {
         if (resourceUrl == null) {
             throw new FileNotFoundException("Resource not found: " + resourcePath);
         }
+        if (!resourceUrl.getProtocol().equals("jar")) {
+            return;
+        }
         String basePath = resourcePath.substring(0, resourcePath.lastIndexOf('/') + 1);
-
         URL mainClassUrl = mainClass.getProtectionDomain().getCodeSource().getLocation();
-        Path mainDir = Paths.get(URLDecoder.decode(mainClassUrl.getPath(), "UTF-8")).toAbsolutePath();
+        
+        var mainClassUrlpath = mainClassUrl.getPath();
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            mainClassUrlpath = mainClassUrlpath.substring(1);
+            mainClassUrlpath = mainClassUrlpath.replace('/', '\\');
+        }
+        Path mainDir = Paths.get(URLDecoder.decode( mainClassUrlpath, "UTF-8")).toAbsolutePath();
 
         if (Files.isRegularFile(mainDir)) {
             mainDir = mainDir.getParent();
         }
-
         Path targetDir = mainDir.resolve(basePath.replaceFirst("^/", ""));
-
-        if (resourceUrl.getProtocol().equals("jar")) {
-            extractFromJar(resourceUrl, basePath, targetDir);
-        } else if (resourceUrl.getProtocol().equals("file")) {
-            copyFromFileSystem(resourceUrl, targetDir);
-        }
-
-        return targetDir;
+        extractFromJar(resourceUrl, basePath, targetDir);
     }
 
     private static void extractFromJar(URL resourceUrl, String basePath, Path targetDir) throws IOException {
         String jarPathStr = resourceUrl.getPath().substring(5, resourceUrl.getPath().indexOf("!"));
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            jarPathStr = jarPathStr.substring(1);
+            jarPathStr = jarPathStr.replace('/', '\\');
+        }
         Path jarPath = Paths.get(URLDecoder.decode(jarPathStr, "UTF-8"));
 
         try (JarFile jar = new JarFile(jarPath.toFile())) {
@@ -79,23 +83,6 @@ public class ResourceExtractor {
                         try (InputStream in = jar.getInputStream(entry)) {
                             Files.copy(in, outPath);
                         }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void copyFromFileSystem(URL resourceUrl, Path targetDir) throws Exception {
-        Path resourceFile = Paths.get(resourceUrl.toURI());
-        Path resourceDir = resourceFile.getParent();
-
-        if (Files.isDirectory(resourceDir)) {
-            try (var paths = Files.walk(resourceDir)) {
-                for (Path src : paths.toList()) {
-                    if (Files.isRegularFile(src)) {
-                        Path dest = targetDir.resolve(resourceDir.relativize(src).toString());
-                        Files.createDirectories(dest.getParent());
-                        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
             }
