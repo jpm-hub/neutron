@@ -1,6 +1,5 @@
 package neutron;
 import javafx.stage.StageStyle;
-import jpm.jpm;
 import netscape.javascript.JSObject;
 
 public class MsgBoxController extends Controller {
@@ -17,6 +16,7 @@ public class MsgBoxController extends Controller {
     private boolean confirmResult;
     private boolean isCancelButtonHidden = false;
 
+    @SuppressWarnings("removal")
     public MsgBoxController() {
         onBeforeMount( (ctrl) -> {
             getPrimaryStage().setAlwaysOnTop(true);
