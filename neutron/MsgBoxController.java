@@ -1,14 +1,15 @@
 package neutron;
 import javafx.stage.StageStyle;
+import jpm.jpm;
 import netscape.javascript.JSObject;
 
 public class MsgBoxController extends Controller {
     private String msgBoxHtmlPath = "ui/msgbox.html";
     private String message = "";
-    private String title = "Message Box";
+    private String title = "";
     
-    private String okButtonText = "OK";
-    private String cancelButtonText = "Cancel";
+    private String okButtonText = "";
+    private String cancelButtonText = "";
     private double height = 190;
     private double width = 320;
     private String bgColor = "#ffffff";
@@ -28,9 +29,9 @@ public class MsgBoxController extends Controller {
             if (messageElement == null) {System.err.println("No element with id 'message' found in the alert/confirm HTML."); close(); return;}
             if (okButtonElement == null) {System.err.println("No element with id 'ok-button' found in the alert/confirm HTML."); close(); return;}
             if (cancelButtonElement == null) {System.err.println("No element with id 'cancel-button' found in the confirm HTML."); close(); return;}
-            messageElement.setMember("innerHTML", message);
-            okButtonElement.setMember("innerHTML", okButtonText);
-            cancelButtonElement.setMember("innerHTML", cancelButtonText);
+            if (message.length() > 0) {messageElement.setMember("innerHTML", message);}
+            if (okButtonText.length() > 0) {okButtonElement.setMember("innerHTML", okButtonText);}
+            if (cancelButtonText.length() > 0) {cancelButtonElement.setMember("innerHTML", cancelButtonText);}
             hideCancelButton();
             getEngine().executeScript("""
                 document.getElementById('ok-button').addEventListener('click', () => {

@@ -154,6 +154,11 @@ public class Neutron extends Application {
             return this;
         }
 
+        public builder DevServer(int port) {
+            DevServer.create(port);
+            return this;
+        }
+
         public builder stageStyle(StageStyle stageStyle) {
             this.stageStyle = stageStyle;
             return this;

@@ -29,6 +29,7 @@ public abstract class Controller {
     private List<String> listOfDraggableElements = new ArrayList<>();
     private MsgBoxController msgCtrl = null;
     private HashMap<String, EventHandler> eventHashMap = new HashMap<>();
+    private int indexOfDevServerTask = -1;
 
     public static interface CtrlRunnableEvent {
         void run(Controller ctrl, EventType<WindowEvent> eventType);
@@ -43,14 +44,18 @@ public abstract class Controller {
     }
 
     public final void attachController(WebView webView, Stage primaryStage, StackPane root) {
+        this.indexOfDevServerTask = DevServer.on("", () -> {
+            listOfDraggableElements.clear();
+            execJs("window.location.reload();");
+        });
         this.webView = webView;
         this.engine = webView.getEngine();
         this.primaryStage = primaryStage;
         this.root = root;
         _beforeMount();
-        this.engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+        engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && this != null) {
-                ((JSObject) this.engine.executeScript("window")).setMember("java", this);
+                ((JSObject) engine.executeScript("window")).setMember("java", this);
                 _makeDomReady();
                 _afterMount();
                 System.gc();
@@ -65,7 +70,7 @@ public abstract class Controller {
         _beforeMount();
         isDomReady = false;
         var resourceUrl = Neutron.class.getResource(htmlResourcePath).toExternalForm();
-        if( Neutron.isVerbose() ) {
+        if (Neutron.isVerbose()) {
             System.out.println("[NEUTRON-VERBOSE] Loading HTML resource from: " + resourceUrl);
         }
         ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
@@ -74,31 +79,32 @@ public abstract class Controller {
 
     final void _makeDomReady() {
         isDomReady = true;
-        engine.executeScript("""
-            (()=>{
-                window.js = {};
-                window.onerror = function(message, source, lineno, colno, error) {
-                    if (window.java && window.java.print) {
-                        window.java.print(`JS ERROR: ${message}\n at ${source}:${lineno}:${colno}`);
-                    }
-                };
-                ['log', 'warn', 'error','info','trace','time','timeEnd','timeStamp','timeLog','assert'].forEach(t => {
-                    const orig = console[t];
-                    console[t] = (...args) => {
-                        orig(...args);
-                        window.java.print(`[console.${t}] ${args.join(' ')}`);
+        engine.executeScript(
+                """
+                (()=>{
+                    window.js = {};
+                    window.onerror = function(message, source, lineno, colno, error) {
+                        if (window.java && window.java.print) {
+                            window.java.print(`JS ERROR: ${message}\n at ${source}:${lineno}:${colno}`);
+                        }
                     };
-                });
-                window.dispatchEvent(new CustomEvent("neutron-ready"));
-            })();
-            """);
+                    ['log', 'warn', 'error','info','trace','time','timeEnd','timeStamp','timeLog','assert'].forEach(t => {
+                        const orig = console[t];
+                        console[t] = (...args) => {
+                            orig(...args);
+                            window.java.print(`[console.${t}] ${args.join(' ')}`);
+                        };
+                    });
+                    window.dispatchEvent(new CustomEvent("neutron-ready"));
+                })();
+                """);
 
         if (Neutron.isVerbose()) {
             System.out.println(
-                """
-                [NEUTRON-VERBOSE] 'neutron-ready' event dispatched on window !!!
-                [NEUTRON-VERBOSE] DOM is ready to call Controller Methods through 'window.java.<your_java_function_name>(args...);'
-                [NEUTRON-VERBOSE] Controller is ready to call JS functions through controller.call(<your_js_function>, args...);""");
+                    """
+                    [NEUTRON-VERBOSE] 'neutron-ready' event dispatched on window !!!
+                    [NEUTRON-VERBOSE] DOM is ready to call Controller Methods through 'window.java.<your_java_function_name>(args...);'
+                    [NEUTRON-VERBOSE] Controller is ready to call JS functions through controller.call(<your_js_function>, args...);""");
         }
     }
 
@@ -168,7 +174,7 @@ public abstract class Controller {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
         }
-        if ( !(arg instanceof JSON) ) {
+        if (!(arg instanceof JSON)) {
             emit(event, (Object) arg);
             return;
         }
@@ -189,7 +195,7 @@ public abstract class Controller {
             System.out.println("'neutron-ready' event did not dispatch yet, cannot emit");
             return;
         }
-        if ( data instanceof JSON ) {
+        if (data instanceof JSON) {
             emit(event, (JSON) data);
             return;
         }
@@ -220,6 +226,7 @@ public abstract class Controller {
 
     public void close() {
         try {
+            _stop(WindowEvent.WINDOW_CLOSE_REQUEST);
             primaryStage.close();
         } catch (NullPointerException e) {
             System.err.println("Cannot close stage, primaryStage before starting");
@@ -320,6 +327,7 @@ public abstract class Controller {
     }
 
     final void _stop(EventType<WindowEvent> eventType) {
+        DevServer.off(this.indexOfDevServerTask);
         if (onStop != null) {
             onStop.run(this, eventType);
         }

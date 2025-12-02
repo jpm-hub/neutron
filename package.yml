@@ -1,15 +1,18 @@
 main: neutron.App
 package: neutron
-version: 1.0.1
+version: 1.0.2
 description: Neutron - A lightweight JavaFX native webview app framework
 language: java
+modular: true
 scripts:
   start: jpm compile && jpm run
   compile@: jpm compile && jpm cp
   cp: cp -r resources/* out/
-  clean: rm -rf out/* dist 
-  dev: jpm run -hot "(resources/**|neutron/*)" "jpm cp"
+  clean: rm -rf out/* dist
+  dev: jpm run -hot '(resources/**|neutron/*)' 'jpm cp && dev'
   install@: jpm install:{{jpm.OS-ARCH}} ...args@
+  
+  # Platform-specific install scripts
   install:windows-amd64: JFX=win jpm install ...args@
   install:darwin-amd64: JFX=mac jpm install ...args@
   install:darwin-arm64: JFX=mac-aarch64 jpm install ...args@
@@ -17,10 +20,16 @@ scripts:
 dependencies:
   - org.openjfx javafx-web:21.0.8
   - com.fasterxml.jackson.core jackson-databind:latest
+  - org.openjfx jdk-jsobject:25.0.1
+  - concurrently:1.0.0 exec
+  - dev:1.0.0 exec
 classifiers:
   org.openjfx: '{{ENV.JFX}}'
 repos:
   - default: https://repo1.maven.org/maven2/
 args:
-  java: --add-modules javafx.controls,javafx.graphics,javafx.web
+  java: >-
+    --add-modules jdk.jsobject,javafx.controls,javafx.graphics,javafx.web
+    --enable-native-access=javafx.graphics
+    --enable-native-access=javafx.web
   javac: -parameters
