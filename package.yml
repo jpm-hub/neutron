@@ -23,6 +23,7 @@ dependencies:
   - org.openjfx jdk-jsobject:25.0.1
   - concurrently:1.0.0 exec
   - dev:1.0.0 exec
+  - jpm:1.0.0
 classifiers:
   org.openjfx: '{{ENV.JFX}}'
 repos:
