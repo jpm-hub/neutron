@@ -66,15 +66,15 @@ public abstract class Controller {
         });
     }
 
-    public final void loadHTML(String htmlResourcePath) {
+    public final void loadHTML(String htmlPath) {
         _beforeMount();
         isDomReady = false;
-        var resourceUrl = Neutron.class.getResource(htmlResourcePath).toExternalForm();
+        var resourceUrl = Neutron.class.getResource(htmlPath).toExternalForm();
         if (Neutron.isVerbose()) {
             System.out.println("[NEUTRON-VERBOSE] Loading HTML resource from: " + resourceUrl);
         }
-        ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
-        engine.load(Paths.get(htmlResourcePath).toUri().toString());
+        ResourceExtractor.ensureOnFilesystem(htmlPath);
+        engine.load(Paths.get(htmlPath).toUri().toString());
     }
 
     final void _makeDomReady() {

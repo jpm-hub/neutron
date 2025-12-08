@@ -19,7 +19,7 @@ public class Neutron extends Application {
     static private Controller controller = null;
     static private String title = "Neutron App";
     static private String initialBackgroundColor = "#ffffff";
-    static private String htmlResourcePath = "ui/index.html";
+    static private String htmlPath = "ui/index.html";
     static private double width = 630;
     static private double height = 410;
     static private boolean verbose = true;
@@ -48,9 +48,9 @@ public class Neutron extends Application {
         Neutron.launch(Neutron.class);
     }
 
-    public static void launch(String htmlResourcePath) {
+    public static void launch(String htmlPath) {
         Neutron.controller = checkController(null);
-        Neutron.htmlResourcePath = htmlResourcePath;
+        Neutron.htmlPath = htmlPath;
         Neutron.launch(Neutron.class);
     }
 
@@ -63,12 +63,12 @@ public class Neutron extends Application {
         Neutron.launch(Neutron.class, args);
     }
 
-    public static void launch(Controller ctrl, String htmlResourcePath, String title, double width,
+    public static void launch(Controller ctrl, String htmlPath, String title, double width,
             double height, String initialBackgroundColor, StageStyle stageStyle, String[] args) {
         
         Neutron.controller = checkController(ctrl);
         Neutron.sStyle = (stageStyle != null) ? stageStyle : Neutron.sStyle;
-        Neutron.htmlResourcePath = (htmlResourcePath != null) ? htmlResourcePath : Neutron.htmlResourcePath;
+        Neutron.htmlPath = (htmlPath != null) ? htmlPath : Neutron.htmlPath;
         Neutron.title = (title != null) ? title : "no title";
         Neutron.width = (width >= 0) ? width : Neutron.width;
         Neutron.height = (height >= 0) ? height : Neutron.height;
@@ -96,31 +96,31 @@ public class Neutron extends Application {
         stage.show();
     }
 
-    public static void show(Controller c, String htmlResourcePath, String title, double w,
+    public static void show(Controller c, String htmlPath, String title, double w,
             double h, String initialBackgroundColor, StageStyle stageStyle) {
         if (app == null) {
             System.err.println("Neurtron needs to be launched first before show()");
             System.exit(1);
         }
         var ctrl = checkController(c);
-        var stage = newPage(new Stage(), stageStyle, ctrl, htmlResourcePath, title, w, h, initialBackgroundColor);
+        var stage = newPage(new Stage(), stageStyle, ctrl, htmlPath, title, w, h, initialBackgroundColor);
         stage.show();
     }
 
-    public static void showAndWait(Controller c, String htmlResourcePath, String title, double w,
+    public static void showAndWait(Controller c, String htmlPath, String title, double w,
             double h, String initialBackgroundColor, StageStyle stageStyle) {
         if (app == null) {
             System.err.println("Neurtron needs to be launched first before show()");
             System.exit(1);
         }
         var ctrl = checkController(c);
-        var stage = newPage(new Stage(), stageStyle, ctrl, htmlResourcePath, title, w, h, initialBackgroundColor);
+        var stage = newPage(new Stage(), stageStyle, ctrl, htmlPath, title, w, h, initialBackgroundColor);
         stage.showAndWait();
     }
 
     // Builder pattern for Neutron configuration
     public static class builder {
-        private String htmlResourcePath = "ui/index.html";
+        private String htmlPath = "ui/index.html";
         private String title = "Neutron App";
         private double width = 630;
         private double height = 410;
@@ -128,8 +128,8 @@ public class Neutron extends Application {
         private Controller controller = null;
         private StageStyle stageStyle = StageStyle.DECORATED;
 
-        public builder htmlResourcePath(String htmlResourcePath) {
-            this.htmlResourcePath = htmlResourcePath;
+        public builder htmlPath(String htmlPath) {
+            this.htmlPath = htmlPath;
             return this;
         }
 
@@ -165,13 +165,13 @@ public class Neutron extends Application {
         }
 
         public void launch(String[] args) {
-            Neutron.launch(this.controller, this.htmlResourcePath, this.title, this.width, this.height,
+            Neutron.launch(this.controller, this.htmlPath, this.title, this.width, this.height,
                     this.initialBackgroundColor, this.stageStyle,
                     args);
         }
 
         public void show() {
-            Neutron.show(this.controller, this.htmlResourcePath, this.title, this.width, this.height,
+            Neutron.show(this.controller, this.htmlPath, this.title, this.width, this.height,
                     this.initialBackgroundColor,
                     this.stageStyle);
         }
@@ -185,20 +185,20 @@ public class Neutron extends Application {
             System.exit(1);
         }
         Neutron.app = this;
-        newPage(primaryStage, sStyle, controller, htmlResourcePath, title, Neutron.width, Neutron.height,
+        newPage(primaryStage, sStyle, controller, htmlPath, title, Neutron.width, Neutron.height,
                 initialBackgroundColor);
         primaryStage.show();
     }
 
-    private static Stage newPage(Stage primaryStage, StageStyle stageStyle, Controller ctrl, String htmlResourcePath,
+    private static Stage newPage(Stage primaryStage, StageStyle stageStyle, Controller ctrl, String htmlPath,
             String title, double w, double h, String initialBackgroundColor) {
         ctrl._start();
         WebView webView = new WebView();
         StackPane stack = new StackPane();
         stack.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         webView.setPageFill(Color.web(initialBackgroundColor));
-        ResourceExtractor.ensureOnFilesystem(htmlResourcePath);
-        webView.getEngine().load(Paths.get(htmlResourcePath).toUri().toString());
+        ResourceExtractor.ensureOnFilesystem(htmlPath);
+        webView.getEngine().load(Paths.get(htmlPath).toUri().toString());
         primaryStage.initStyle(stageStyle);
         primaryStage.setTitle(title);
         stack.getChildren().add(webView);
