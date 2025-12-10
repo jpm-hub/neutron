@@ -60,7 +60,7 @@ public class MsgBoxController extends Controller {
     public StageStyle getStageStyle() { return stageStyle; }
     public MsgBoxController setStageStyle(StageStyle stageStyle) { this.stageStyle = stageStyle; return this; }
     public MsgBoxController setMsgBoxHtmlPath(String msgBoxHtmlPath) { this.msgBoxHtmlPath = msgBoxHtmlPath; return this; }
-    public MsgBoxController setTitleInnerHTML(String title) { this.title = title; return this; }
+    public MsgBoxController setTitle(String title) { this.title = title; return this; }
     public MsgBoxController setOkButtonText(String okButtonText) { this.okButtonText = okButtonText; return this; }
     public MsgBoxController setCancelButtonText(String cancelButtonText) { this.cancelButtonText = cancelButtonText; return this; }
     public MsgBoxController setBackgroundColor(String backgroundColor) { this.bgColor = backgroundColor; return this; }
@@ -83,7 +83,7 @@ public class MsgBoxController extends Controller {
     public static MsgBoxController from(MsgBoxController msgCtrl) {
         MsgBoxController newCtrl = new MsgBoxController();
         newCtrl.setMsgBoxHtmlPath(msgCtrl.getMsgBoxHtmlPath());
-        newCtrl.setTitleInnerHTML(msgCtrl.getTitle());
+        newCtrl.setTitle(msgCtrl.getTitle());
         newCtrl.setOkButtonText(msgCtrl.getOkButtonText());
         newCtrl.setCancelButtonText(msgCtrl.getCancelButtonText());
         newCtrl.setMessageInnerHTML(msgCtrl.getMessage());
