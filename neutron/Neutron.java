@@ -130,7 +130,8 @@ public class Neutron extends Application {
         private String initialBackgroundColor = "#ffffff";
         private Controller controller = null;
         private StageStyle stageStyle = StageStyle.DECORATED;
-
+        public builder(String... kotlinOverloading) {
+        }
         public builder htmlPath(String htmlPath) {
             this.htmlPath = htmlPath;
             return this;
@@ -168,6 +169,7 @@ public class Neutron extends Application {
         }
 
         public void launch(String[] args) {
+
             Neutron.launch(this.controller, this.htmlPath, this.title, this.width, this.height,
                     this.initialBackgroundColor, this.stageStyle,
                     args);
