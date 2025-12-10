@@ -118,6 +118,9 @@ public class Neutron extends Application {
         stage.showAndWait();
     }
 
+    public static builder builder() {
+        return new builder();
+    }
     // Builder pattern for Neutron configuration
     public static class builder {
         private String htmlPath = "ui/index.html";
