@@ -30,6 +30,7 @@ public abstract class Controller {
     private MsgBoxController msgCtrl = null;
     private HashMap<String, EventHandler> eventHashMap = new HashMap<>();
     private int indexOfDevServerTask = -1;
+    private boolean initialVisibility = true;
 
     public static interface CtrlRunnableEvent {
         void run(Controller ctrl, EventType<WindowEvent> eventType);
@@ -56,8 +57,8 @@ public abstract class Controller {
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && this != null) {
                 ((JSObject) engine.executeScript("window")).setMember("java", this);
-                _makeDomReady();
                 _afterMount();
+                _makeDomReady();
                 System.gc();
             }
         });
@@ -375,5 +376,23 @@ public abstract class Controller {
 
     public final StackPane getRootPane() {
         return root;
+    }
+    public final boolean isInitiallyVisible() {
+        return initialVisibility;
+    }
+    public final void show(){
+        if (primaryStage != null) {
+            Platform.runLater(() -> {
+                primaryStage.show();
+            });
+        }
+    }
+    public final void hide(){
+        initialVisibility = false;
+        if (primaryStage != null) {
+            Platform.runLater(() -> {
+                primaryStage.hide();
+            });
+        }
     }
 }

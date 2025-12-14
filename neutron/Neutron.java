@@ -65,7 +65,7 @@ public class Neutron extends Application {
 
     public static void launch(Controller ctrl, String htmlPath, String title, double width,
             double height, String initialBackgroundColor, StageStyle stageStyle, String[] args) {
-        
+
         Neutron.controller = checkController(ctrl);
         Neutron.sStyle = (stageStyle != null) ? stageStyle : Neutron.sStyle;
         Neutron.htmlPath = (htmlPath != null) ? htmlPath : Neutron.htmlPath;
@@ -104,7 +104,9 @@ public class Neutron extends Application {
         }
         var ctrl = checkController(c);
         var stage = newPage(new Stage(), stageStyle, ctrl, htmlPath, title, w, h, initialBackgroundColor);
-        stage.show();
+        if (ctrl.isInitiallyVisible()) {
+            stage.show();
+        }
     }
 
     public static void showAndWait(Controller c, String htmlPath, String title, double w,
@@ -115,12 +117,15 @@ public class Neutron extends Application {
         }
         var ctrl = checkController(c);
         var stage = newPage(new Stage(), stageStyle, ctrl, htmlPath, title, w, h, initialBackgroundColor);
-        stage.showAndWait();
+        if (ctrl.isInitiallyVisible()) {
+            stage.showAndWait();
+        }
     }
 
     public static builder builder() {
         return new builder();
     }
+
     // Builder pattern for Neutron configuration
     public static class builder {
         private String htmlPath = "ui/index.html";
@@ -130,8 +135,10 @@ public class Neutron extends Application {
         private String initialBackgroundColor = "#ffffff";
         private Controller controller = null;
         private StageStyle stageStyle = StageStyle.DECORATED;
+
         public builder(String... kotlinOverloading) {
         }
+
         public builder htmlPath(String htmlPath) {
             this.htmlPath = htmlPath;
             return this;
@@ -184,7 +191,7 @@ public class Neutron extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        JSON.mapper.setVisibility(PropertyAccessor.FIELD,Visibility.ANY);
+        JSON.mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
         if (controller == null) {
             System.err.println("a controller is not set. Please create a class that extends Controller and set it.");
             System.exit(1);
@@ -192,7 +199,9 @@ public class Neutron extends Application {
         Neutron.app = this;
         newPage(primaryStage, sStyle, controller, htmlPath, title, Neutron.width, Neutron.height,
                 initialBackgroundColor);
-        primaryStage.show();
+        if (controller.isInitiallyVisible()) {
+            primaryStage.show();
+        }
     }
 
     private static Stage newPage(Stage primaryStage, StageStyle stageStyle, Controller ctrl, String htmlPath,
@@ -269,8 +278,8 @@ public class Neutron extends Application {
     }
 
     public static boolean confirm(MsgBoxController ctrl) {
-        Neutron.showAndWait(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
-                ctrl.getBackgroundColor(), ctrl.getStageStyle());
+            Neutron.showAndWait(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
+                    ctrl.getBackgroundColor(), ctrl.getStageStyle());
         return ctrl.getConfirmResult();
     }
 }
