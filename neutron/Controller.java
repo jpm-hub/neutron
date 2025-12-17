@@ -74,8 +74,8 @@ public abstract class Controller {
         if (Neutron.isVerbose()) {
             System.out.println("[NEUTRON-VERBOSE] Loading HTML resource from: " + resourceUrl);
         }
-        ResourceExtractor.ensureOnFilesystem(htmlPath);
-        engine.load(Paths.get(htmlPath).toUri().toString());
+        var extractedPath = ResourceExtractor.ensureOnFilesystem(htmlPath);
+        engine.load(extractedPath.toUri().toString());
     }
 
     final void _makeDomReady() {

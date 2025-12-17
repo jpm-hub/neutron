@@ -211,8 +211,8 @@ public class Neutron extends Application {
         StackPane stack = new StackPane();
         stack.setStyle("-fx-background-color: " + initialBackgroundColor + ";");
         webView.setPageFill(Color.web(initialBackgroundColor));
-        ResourceExtractor.ensureOnFilesystem(htmlPath);
-        webView.getEngine().load(Paths.get(htmlPath).toUri().toString());
+        var htmlp = ResourceExtractor.ensureOnFilesystem(htmlPath);
+        webView.getEngine().load(htmlp.toUri().toString());
         primaryStage.initStyle(stageStyle);
         primaryStage.setTitle(title);
         stack.getChildren().add(webView);

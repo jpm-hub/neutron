@@ -8,18 +8,19 @@ import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class ResourceExtractor {
 
-    public static void ensureOnFilesystem(String resourcePath) {
+    public static Path ensureOnFilesystem(String resourcePath) {
+        Path extractedPath = null;
         try {
-         extractToMainDir(findMainClass(), resourcePath);
+         extractedPath = extractToMainDir(findMainClass(), resourcePath);
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract resource: " + resourcePath, e);
-        }
+        };
+        return extractedPath.resolve(resourcePath).toAbsolutePath();
     }
 
     static Class<?> findMainClass() {
@@ -33,22 +34,22 @@ public class ResourceExtractor {
         } catch (Exception ignored) { }
         return ResourceExtractor.class; // fallback
     }
-
-    /**
-     * Extracts a resource directory (like "ui/index.html") to the same folder where the main class is located.
-     * Automatically determines if resources come from a JAR or the file system.
-     */
-    private static void extractToMainDir(Class<?> mainClass, String resourcePath) throws Exception {
-        if (!resourcePath.startsWith("/")) {
-            resourcePath = "/" + resourcePath;
+    private static class ResourceInfo {
+        URL resourceUrl;
+        String basePath;
+        Path targetDir;
+        ResourceInfo(URL resourceUrl, String basePath, Path targetDir) {
+            this.resourceUrl = resourceUrl;
+            this.basePath = basePath;
+            this.targetDir = targetDir;
         }
+    }
+    private static ResourceInfo getMainDir(Class<?> mainClass, String resourcePath) throws Exception {
         URL resourceUrl = mainClass.getResource(resourcePath);
         if (resourceUrl == null) {
             throw new FileNotFoundException("Resource not found: " + resourcePath);
         }
-        if (!resourceUrl.getProtocol().equals("jar")) {
-            return;
-        }
+        
         String basePath = resourcePath.substring(0, resourcePath.lastIndexOf('/') + 1);
         URL mainClassUrl = mainClass.getProtectionDomain().getCodeSource().getLocation();
         
@@ -62,8 +63,23 @@ public class ResourceExtractor {
         if (Files.isRegularFile(mainDir)) {
             mainDir = mainDir.getParent();
         }
-        Path targetDir = mainDir.resolve(basePath.replaceFirst("^/", ""));
-        extractFromJar(resourceUrl, basePath, targetDir);
+        return new ResourceInfo(resourceUrl, basePath, mainDir);
+    }
+
+    /**
+     * Extracts a resource directory (like "ui/index.html") to the same folder where the main class is located.
+     * Automatically determines if resources come from a JAR or the file system.
+     */
+    private static Path extractToMainDir(Class<?> mainClass, String resourcePath) throws Exception {
+        if (!resourcePath.startsWith("/")) {
+            resourcePath = "/" + resourcePath;
+        }
+        ResourceInfo resInfo = getMainDir(mainClass, resourcePath);
+        if (!resInfo.resourceUrl.getProtocol().equals("jar")) {
+            return resInfo.targetDir.toAbsolutePath();
+        }
+        extractFromJar(resInfo.resourceUrl, resInfo.basePath, resInfo.targetDir.resolve(resInfo.basePath.replaceFirst("^/", "")));
+        return resInfo.targetDir.toAbsolutePath();
     }
 
     private static void extractFromJar(URL resourceUrl, String basePath, Path targetDir) throws IOException {
