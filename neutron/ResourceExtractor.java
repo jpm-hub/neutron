@@ -18,7 +18,7 @@ public class ResourceExtractor {
         try {
          extractedPath = extractToMainDir(findMainClass(), resourcePath);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to extract resource: " + resourcePath, e);
+            throw new RuntimeException("Failed to extract File: " + resourcePath, e);
         };
         return extractedPath.resolve(resourcePath).toAbsolutePath();
     }

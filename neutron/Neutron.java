@@ -273,7 +273,7 @@ public class Neutron extends Application {
 
     public static void alert(MsgBoxController ctrl) {
         ctrl.setHiddenCancelButton();
-        Neutron.showAndWait(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
+        Neutron.show(ctrl, ctrl.getMsgBoxHtmlPath(), ctrl.getTitle(), ctrl.getWidth(), ctrl.getHeight(),
                 ctrl.getBackgroundColor(), ctrl.getStageStyle());
     }
 

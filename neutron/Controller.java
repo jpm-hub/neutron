@@ -57,8 +57,8 @@ public abstract class Controller {
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == javafx.concurrent.Worker.State.SUCCEEDED && this != null) {
                 ((JSObject) engine.executeScript("window")).setMember("java", this);
-                _afterMount();
                 _makeDomReady();
+                _afterMount();
                 System.gc();
             }
         });
